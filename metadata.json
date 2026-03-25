@@ -1,0 +1,5 @@
+{
+  "name": "GHL Workflow Visualizer",
+  "description": "Visualizes 10 GoHighLevel (GHL) automation workflows in a simple, non-technical flowchart format.",
+  "requestFramePermissions": []
+}
