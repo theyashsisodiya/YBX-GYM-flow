@@ -148,7 +148,7 @@ export default function App() {
   const [activeWorkflowId, setActiveWorkflowId] = useState(workflows[0].id);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'visualizer' | 'technical' | 'tags' | 'make' | 'fields'>('visualizer');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [playingStepId, setPlayingStepId] = useState<string | null>(null);
   const [playedStepIds, setPlayedStepIds] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
