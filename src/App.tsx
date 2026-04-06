@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { workflows, ghlTags, StepType, WorkflowStep } from './data/workflows';
+import MakeVisualizer from './components/MakeVisualizer';
+import FieldsTable from './components/FieldsTable';
 import { 
   Zap, 
   MessageSquare, 
@@ -19,7 +21,8 @@ import {
   Sun,
   LayoutTemplate,
   FileText,
-  Tags
+  Tags,
+  Workflow as WorkflowIcon
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -45,15 +48,26 @@ const FlowStepList = ({ steps, activeStepId, playedStepIds }: { steps: WorkflowS
         const isLineActive = isPlayed || isActive;
 
         return (
-          <div key={step.id} className="flex flex-col items-center relative group">
+          <div key={step.id} className="flex flex-col items-center relative">
             {/* Vertical line from previous step */}
-            {index > 0 && <div className={`w-0.5 h-8 transition-colors duration-300 ${isLineActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10' : 'bg-gray-300 dark:bg-gray-700'}`} />}
+            {index > 0 && (
+              <div className={`w-0.5 h-8 transition-colors duration-300 relative overflow-hidden ${isLineActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                {isActive && (
+                  <motion.div 
+                    className="w-full bg-white opacity-50 absolute top-0 left-0"
+                    initial={{ height: "0%" }}
+                    animate={{ height: "100%" }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                )}
+              </div>
+            )}
             
             {/* Step Card */}
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex flex-col items-center w-64 bg-white dark:bg-gray-800 rounded-xl p-4 border shadow-sm text-center relative z-20 transition-all duration-300
+              className={`flex flex-col items-center w-64 bg-white dark:bg-gray-800 rounded-xl p-4 border shadow-sm text-center relative z-20 transition-all duration-300 group
                 ${style.border} ${style.darkBorder}
                 ${isActive ? 'ring-4 ring-blue-500/50 dark:ring-blue-400/50 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-105' : 'hover:shadow-md'}
               `}
@@ -100,7 +114,16 @@ const FlowStepList = ({ steps, activeStepId, playedStepIds }: { steps: WorkflowS
                         } ${isBranchActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10' : 'bg-gray-300 dark:bg-gray-700'}`} />
                       )}
                       {/* Vertical line down to label */}
-                      <div className={`w-0.5 h-6 transition-colors duration-300 ${isBranchActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10' : 'bg-gray-300 dark:bg-gray-700'}`}></div>
+                      <div className={`w-0.5 h-6 transition-colors duration-300 relative overflow-hidden ${isBranchActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] z-10' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                        {activeStepId === branch.steps[0]?.id && (
+                          <motion.div 
+                            className="w-full bg-white opacity-50 absolute top-0 left-0"
+                            initial={{ height: "0%" }}
+                            animate={{ height: "100%" }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          />
+                        )}
+                      </div>
                       
                       {/* Branch Label */}
                       <div className={`z-20 bg-white dark:bg-gray-800 border shadow-sm px-3 py-1 rounded-full text-xs font-bold mb-4 whitespace-nowrap transition-colors duration-300 ${isBranchActive ? 'border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'}`}>
@@ -124,7 +147,7 @@ const FlowStepList = ({ steps, activeStepId, playedStepIds }: { steps: WorkflowS
 export default function App() {
   const [activeWorkflowId, setActiveWorkflowId] = useState(workflows[0].id);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'visualizer' | 'technical' | 'tags'>('visualizer');
+  const [activeTab, setActiveTab] = useState<'visualizer' | 'technical' | 'tags' | 'make' | 'fields'>('visualizer');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [playingStepId, setPlayingStepId] = useState<string | null>(null);
   const [playedStepIds, setPlayedStepIds] = useState<string[]>([]);
@@ -245,14 +268,15 @@ export default function App() {
                   setPlayingStepId(null);
                   setPlayedStepIds([]);
                   setIsPlaying(false);
+                  if (activeTab === 'make') setActiveTab('visualizer');
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-                  isActive 
+                  isActive && activeTab !== 'make'
                     ? (isDarkMode ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-900 text-white shadow-md')
                     : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900')
                 }`}
               >
-                <Icon size={18} className={isActive ? 'text-white' : (isDarkMode ? 'text-gray-400' : 'text-gray-400')} />
+                <Icon size={18} className={isActive && activeTab !== 'make' ? 'text-white' : (isDarkMode ? 'text-gray-400' : 'text-gray-400')} />
                 <span className="font-medium text-sm truncate">{workflow.name}</span>
               </button>
             );
@@ -264,38 +288,50 @@ export default function App() {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Header */}
         <header className={`border-b px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
             <button 
-              className={`lg:hidden p-2 -ml-2 rounded-lg ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`lg:hidden p-2 -ml-2 rounded-lg shrink-0 ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}
               onClick={() => setIsMobileMenuOpen(true)}
             >
               <Menu size={24} />
             </button>
             
             {/* Tabs */}
-            <div className={`flex p-1 rounded-lg ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+            <div className={`flex p-1 rounded-lg shrink-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
               <button 
                 onClick={() => setActiveTab('visualizer')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'visualizer' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'visualizer' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
               >
                 <LayoutTemplate size={16} /> <span className="hidden sm:inline">Flowchart</span>
               </button>
               <button 
                 onClick={() => setActiveTab('technical')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'technical' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'technical' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
               >
                 <FileText size={16} /> <span className="hidden sm:inline">Details</span>
               </button>
               <button 
                 onClick={() => setActiveTab('tags')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'tags' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'tags' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
               >
                 <Tags size={16} /> <span className="hidden sm:inline">GHL Tags</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('make')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'make' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+              >
+                <WorkflowIcon size={16} /> <span className="hidden sm:inline">Make.com</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('fields')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'fields' ? (isDarkMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+              >
+                <FileText size={16} /> <span className="hidden sm:inline">26 Fields Table</span>
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {activeTab === 'visualizer' && (
               <>
                 <button 
@@ -409,6 +445,18 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'make' && (
+            <div className="h-full w-full">
+              <MakeVisualizer />
+            </div>
+          )}
+
+          {activeTab === 'fields' && (
+            <div className="h-full w-full">
+              <FieldsTable />
             </div>
           )}
 
